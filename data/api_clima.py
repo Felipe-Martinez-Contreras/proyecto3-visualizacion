@@ -1,0 +1,1 @@
+# Consulta la API Open-Meteo y retorna temperatura, humedad y viento actuales
