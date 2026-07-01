@@ -31,9 +31,17 @@ OPENMETEO_BASE_URL = os.environ.get(
     "OPENMETEO_BASE_URL", "https://api.open-meteo.com/v1"
 )
 OPENAQ_BASE_URL = os.environ.get("OPENAQ_BASE_URL", "https://api.openaq.org/v3")
+# Calidad del aire con Open-Meteo (API separada de la del clima; NO requiere key).
+OPENMETEO_AIRE_BASE_URL = os.environ.get(
+    "OPENMETEO_AIRE_BASE_URL", "https://air-quality-api.open-meteo.com/v1"
+)
 
 # Variables del clima que pedimos a Open-Meteo (mapean al esquema Condiciones_Clima).
 OPENMETEO_CURRENT_VARS = "temperature_2m,relative_humidity_2m,wind_speed_10m"
+
+# Contaminantes que pedimos a Open-Meteo Air Quality. Los nombres son los de la API;
+# el mapeo a nuestro esquema (pm25/no2/o3) vive en transformacion.py.
+OPENMETEO_AIRE_VARS = "pm2_5,nitrogen_dioxide,ozone"
 
 
 def obtener_clima(
@@ -53,6 +61,37 @@ def obtener_clima(
             "latitude": latitud,
             "longitude": longitud,
             "current": OPENMETEO_CURRENT_VARS,
+        },
+        timeout=timeout,
+    )
+    respuesta.raise_for_status()
+    return respuesta.json()
+
+
+def obtener_calidad_aire_openmeteo(
+    latitud: float,
+    longitud: float,
+    *,
+    base_url: str = OPENMETEO_AIRE_BASE_URL,
+    timeout: float = TIMEOUT_S,
+) -> dict:
+    """Consulta la calidad del aire actual en Open-Meteo y devuelve el JSON crudo.
+
+    Open-Meteo Air Quality es GRATIS y NO requiere API key; se consulta por
+    coordenadas (la ``zona`` lógica la aporta quien normaliza). Pedimos el bloque
+    ``current`` con los contaminantes que mapean a nuestro esquema (pm2_5 →pm25,
+    nitrogen_dioxide→no2, ozone→o3). La respuesta tiene la forma::
+
+        {"latitude": -33.45, "longitude": -70.66,
+         "current": {"time": "2026-07-01T12:00", "interval": 3600,
+                     "pm2_5": 12.5, "nitrogen_dioxide": 30.1, "ozone": 45.0}}
+    """
+    respuesta = requests.get(
+        f"{base_url}/air-quality",
+        params={
+            "latitude": latitud,
+            "longitude": longitud,
+            "current": OPENMETEO_AIRE_VARS,
         },
         timeout=timeout,
     )

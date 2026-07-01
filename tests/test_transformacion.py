@@ -10,6 +10,7 @@ from ingesta.transformacion import (
     COLUMNAS_AIRE,
     COLUMNAS_CLIMA,
     normalizar_calidad_aire,
+    normalizar_calidad_aire_openmeteo,
     normalizar_clima,
 )
 
@@ -104,3 +105,44 @@ def test_normalizar_aire_respuesta_vacia_devuelve_df_con_esquema():
     df = normalizar_calidad_aire({"results": []}, zona="Sur")
     assert list(df.columns) == COLUMNAS_AIRE
     assert len(df) == 0
+
+
+# --- Open-Meteo Air Quality → Calidad_Aire_Hist ----------------------------
+
+RESPUESTA_OPENMETEO_AIRE = {
+    "latitude": -33.45,
+    "longitude": -70.66,
+    "current": {
+        "time": "2026-07-01T12:00",
+        "interval": 3600,
+        "pm2_5": 12.5,
+        "nitrogen_dioxide": 30.1,
+        "ozone": 45.0,
+    },
+}
+
+
+def test_normalizar_aire_openmeteo_columnas_esquema_y_mapeo():
+    df = normalizar_calidad_aire_openmeteo(RESPUESTA_OPENMETEO_AIRE, zona="Centro")
+
+    # Mismo esquema destino que OpenAQ.
+    assert list(df.columns) == COLUMNAS_AIRE
+    assert len(df) == 1
+    fila = df.iloc[0]
+    assert fila["timestamp"] == "2026-07-01T12:00"
+    assert fila["zona"] == "Centro"
+    # Mapeo pm2_5→pm25, nitrogen_dioxide→no2, ozone→o3.
+    assert fila["pm25"] == 12.5
+    assert fila["no2"] == 30.1
+    assert fila["o3"] == 45.0
+
+
+def test_normalizar_aire_openmeteo_contaminante_faltante_es_nan():
+    respuesta = {"current": {"time": "2026-07-01T13:00", "pm2_5": 8.0}}
+    df = normalizar_calidad_aire_openmeteo(respuesta, zona="Norte")
+
+    assert list(df.columns) == COLUMNAS_AIRE
+    fila = df.iloc[0]
+    assert fila["pm25"] == 8.0
+    assert math.isnan(fila["no2"])
+    assert math.isnan(fila["o3"])

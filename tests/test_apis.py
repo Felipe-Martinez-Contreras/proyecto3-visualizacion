@@ -49,3 +49,20 @@ def test_obtener_calidad_aire_sin_clave_no_envia_header(monkeypatch):
         apis.obtener_calidad_aire(7, base_url="http://fake/v3")
 
     assert get.call_args.kwargs["headers"] == {}
+
+
+def test_obtener_calidad_aire_openmeteo_consulta_air_quality_sin_key():
+    payload = {"current": {"time": "2026-07-01T12:00", "pm2_5": 12.5}}
+    with patch("ingesta.apis.requests.get", return_value=_respuesta_falsa(payload)) as get:
+        resultado = apis.obtener_calidad_aire_openmeteo(
+            -33.45, -70.66, base_url="http://fake/v1"
+        )
+
+    assert resultado == payload
+    url, kwargs = get.call_args.args[0], get.call_args.kwargs
+    assert url == "http://fake/v1/air-quality"
+    assert kwargs["params"]["latitude"] == -33.45
+    assert kwargs["params"]["longitude"] == -70.66
+    # Pide los contaminantes que mapean a nuestro esquema, sin header de API key.
+    assert kwargs["params"]["current"] == "pm2_5,nitrogen_dioxide,ozone"
+    assert "headers" not in kwargs

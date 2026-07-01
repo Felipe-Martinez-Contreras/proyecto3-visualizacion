@@ -23,6 +23,13 @@ COLUMNAS_AIRE = ["timestamp", "zona", "pm25", "no2", "o3"]
 # Contaminantes que persistimos como columnas en Calidad_Aire_Hist.
 PARAMETROS_AIRE = ["pm25", "no2", "o3"]
 
+# Mapeo de nombres de contaminantes de Open-Meteo Air Quality → nuestro esquema.
+MAPEO_OPENMETEO_AIRE = {
+    "pm2_5": "pm25",
+    "nitrogen_dioxide": "no2",
+    "ozone": "o3",
+}
+
 
 def normalizar_clima(respuesta: dict) -> pd.DataFrame:
     """Respuesta de Open-Meteo → DataFrame con las columnas de ``Condiciones_Clima``.
@@ -87,6 +94,28 @@ def normalizar_calidad_aire(respuesta: dict, zona: str) -> pd.DataFrame:
     ancho = ancho.reset_index()
     ancho["zona"] = zona
     return _tipar_aire(ancho[COLUMNAS_AIRE], zona)
+
+
+def normalizar_calidad_aire_openmeteo(respuesta: dict, zona: str) -> pd.DataFrame:
+    """Respuesta de Open-Meteo Air Quality → DataFrame de ``Calidad_Aire_Hist``.
+
+    Mismo esquema destino que OpenAQ (``timestamp, zona, pm25, no2, o3``), para que
+    ambas fuentes sean intercambiables aguas abajo. ``zona`` la aporta quien llama,
+    porque Open-Meteo se consulta por coordenadas y no "sabe" la zona lógica.
+
+    Espera el bloque ``current`` del endpoint ``/air-quality``, p.ej.::
+
+        {"current": {"time": "2026-07-01T12:00",
+                     "pm2_5": 12.5, "nitrogen_dioxide": 30.1, "ozone": 45.0}}
+
+    Los contaminantes ausentes quedan como ``NaN``.
+    """
+    actual = respuesta.get("current", {})
+    fila = {"timestamp": actual.get("time"), "zona": zona}
+    for origen, destino in MAPEO_OPENMETEO_AIRE.items():
+        fila[destino] = actual.get(origen)
+    df = pd.DataFrame([fila], columns=COLUMNAS_AIRE)
+    return _tipar_aire(df, zona)
 
 
 # --- Helpers privados -------------------------------------------------------
