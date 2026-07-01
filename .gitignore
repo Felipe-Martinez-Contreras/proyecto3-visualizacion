@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Base de datos del proyecto (SQLite) — decisión del equipo
+# La BD es SQLite y su archivo SÍ se versiona en git/GitHub para que todo el
+# equipo comparta la misma base. Vive en db/monitoreo.sqlite.
+# (La plantilla de Python ignora "db.sqlite3"; nuestro archivo se llama distinto,
+#  pero dejamos la excepción explícita para que nunca sea ignorado por error.)
+!db/monitoreo.sqlite
+
+# Archivos transitorios de SQLite (WAL/journal): NO se versionan.
+db/monitoreo.sqlite-wal
+db/monitoreo.sqlite-shm
+db/monitoreo.sqlite-journal
+# ─────────────────────────────────────────────────────────────────────────────
