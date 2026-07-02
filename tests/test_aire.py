@@ -80,6 +80,41 @@ def test_fallback_si_primaria_falla(monkeypatch):
     assert df.iloc[0]["pm25"] == 9.0
 
 
+def test_coordenadas_por_zona_en_celdas_distintas(monkeypatch):
+    # Cada zona debe consultar Open-Meteo con coordenadas propias, separadas ≥0.15°
+    # en latitud (grilla de ~0.1°) para caer en celdas distintas y no devolver
+    # valores idénticos (bug real: Centro y Sur daban el mismo pm2.5/no2/o3).
+    for zona in ("CENTRO", "NORTE", "SUR"):
+        monkeypatch.delenv(f"AIRE_LAT_{zona}", raising=False)
+        monkeypatch.delenv(f"AIRE_LON_{zona}", raising=False)
+
+    coords = {}
+    with patch(
+        "ingesta.apis.obtener_calidad_aire_openmeteo", return_value=CRUDA_OPENMETEO
+    ) as om:
+        for zona in ("Centro", "Norte", "Sur"):
+            aire.obtener_calidad_aire_zona(zona, fuente="open-meteo")
+            coords[zona] = om.call_args.args  # (lat, lon) de la última llamada
+
+    # Coordenadas distintas por zona y bien separadas en latitud.
+    assert len(set(coords.values())) == 3
+    latitudes = sorted(lat for lat, _ in coords.values())
+    assert all(b - a >= 0.15 for a, b in zip(latitudes, latitudes[1:]))
+
+
+def test_coordenadas_configurables_por_entorno(monkeypatch):
+    # Las variables AIRE_LAT_<ZONA> / AIRE_LON_<ZONA> deben mandar sobre los defaults.
+    monkeypatch.setenv("AIRE_LAT_SUR", "-33.70")
+    monkeypatch.setenv("AIRE_LON_SUR", "-70.50")
+
+    with patch(
+        "ingesta.apis.obtener_calidad_aire_openmeteo", return_value=CRUDA_OPENMETEO
+    ) as om:
+        aire.obtener_calidad_aire_zona("Sur", fuente="open-meteo")
+
+    assert om.call_args.args == (-33.70, -70.50)
+
+
 def test_fallback_inverso_openaq_a_openmeteo(monkeypatch):
     # Primaria (OpenAQ) falla → fallback a Open-Meteo AQ.
     def _falla(*args, **kwargs):

@@ -33,13 +33,15 @@ FUENTE_AIRE = os.environ.get("FUENTE_AIRE", "open-meteo")
 def _coords_zona(zona: str) -> tuple[float, float]:
     """Coordenadas (lat, lon) de una zona para Open-Meteo AQ, desde entorno con defaults.
 
-    Defaults razonables alrededor de Santiago (Centro/Norte/Sur). Se pueden ajustar
-    con ``AIRE_LAT_<ZONA>`` / ``AIRE_LON_<ZONA>`` en el ``.env``.
+    Defaults alrededor de Santiago (Centro/Norte/Sur), separados ≥0.15° en latitud
+    para que cada zona caiga en una **celda de grilla distinta** de Open-Meteo AQ
+    (grilla de ~0.1°; con zonas muy juntas la API devuelve valores idénticos).
+    Se pueden ajustar con ``AIRE_LAT_<ZONA>`` / ``AIRE_LON_<ZONA>`` en el ``.env``.
     """
     defaults = {
-        "Centro": (-33.45, -70.66),
-        "Norte": (-33.38, -70.65),
-        "Sur": (-33.52, -70.66),
+        "Centro": (-33.45, -70.66),  # Santiago centro
+        "Norte": (-33.20, -70.68),   # Colina / Quilicura
+        "Sur": (-33.61, -70.58),     # Puente Alto / Pirque
     }
     lat_def, lon_def = defaults.get(zona, defaults["Centro"])
     clave = zona.upper()
