@@ -3,8 +3,11 @@
 Dashboard interactivo en tiempo real que monitorea **movilidad urbana** y **calidad
 del aire** por zona (Centro, Norte, Sur). Proyecto Unidad 3 — Visualización de Datos.
 
-> Estado: **scaffolding inicial**. La estructura y el entorno están listos; la lógica
-> de ingesta, simulador y dashboard son stubs por implementar.
+> Estado: **en desarrollo**. Ingesta (APIs + simulador + scheduler) funcionando;
+> dashboard con refresco en vivo, las 3 visualizaciones del enunciado (línea
+> temporal de tráfico, PM2.5 vs vehículos, temperatura vs tráfico) y los 4
+> filtros interactivos (zona, rango de tiempo, métrica y congestión — esta
+> última derivada al vuelo, no almacenada).
 
 ## Stack
 
@@ -71,7 +74,8 @@ Levanta dos servicios que comparten el archivo SQLite vía volumen del repo:
 - **simulador** — ingesta continua (`ingesta.scheduler`).
 - **dashboard** — app Dash en http://localhost:8050 (`dashboard.app`).
 
-> Nota: hoy ambos comandos apuntan a stubs; aún no hacen trabajo real.
+En local, el dashboard también puede arrancarse directo con
+`uv run python -m dashboard.app`.
 
 ## Modelo de datos
 
