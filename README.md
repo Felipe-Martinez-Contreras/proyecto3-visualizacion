@@ -25,6 +25,7 @@ del aire** por zona (Centro, Norte, Sur). Proyecto Unidad 3 — Visualización d
 ├── db/                 # Base de datos SQLite
 │   ├── schema.sql      #   esquema (3 tablas) — fuente de verdad
 │   ├── init_db.py      #   crea/recrea db/monitoreo.sqlite
+│   ├── sembrar_historico.py #  siembra historial sintético para la demo
 │   └── monitoreo.sqlite#   archivo de BD (versionado)
 ├── ingesta/            # Consumo de APIs, simulador de tráfico y scheduler
 ├── datos/              # Acceso a datos: conexión + repositorio de las 3 tablas
@@ -58,6 +59,10 @@ uv run python db/init_db.py
 
 # 4. Correr los tests
 uv run pytest
+
+# 5. (Opcional) Sembrar historial sintético de 24 h para la demo
+#    (--limpiar borra los datos previos; --semilla lo hace reproducible)
+uv run python -m db.sembrar_historico --limpiar --semilla 42
 ```
 
 > `uv run <cmd>` ejecuta dentro del `.venv` sin necesidad de activarlo. Si prefieres
@@ -76,6 +81,11 @@ Levanta dos servicios que comparten el archivo SQLite vía volumen del repo:
 
 En local, el dashboard también puede arrancarse directo con
 `uv run python -m dashboard.app`.
+
+Ambos contenedores fijan `TZ=America/Santiago` (en `docker-compose.yml`), de modo
+que los timestamps generados dentro de Docker quedan en hora de Chile, alineados
+con las corridas locales. La imagen base `python:3.12-slim` ya incluye `tzdata`,
+así que basta con la variable de entorno.
 
 ## Modelo de datos
 

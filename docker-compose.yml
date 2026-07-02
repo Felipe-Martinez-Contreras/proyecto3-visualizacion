@@ -8,6 +8,10 @@ services:
     build: .
     command: python -m ingesta.scheduler
     env_file: .env
+    environment:
+      # Hora de Chile dentro del contenedor (la base python:3.12-slim ya trae
+      # tzdata): así los timestamps quedan alineados con las corridas locales.
+      TZ: America/Santiago
     volumes:
       - .:/app
     restart: unless-stopped
@@ -17,6 +21,8 @@ services:
     build: .
     command: python -m dashboard.app
     env_file: .env
+    environment:
+      TZ: America/Santiago  # misma zona horaria que el simulador (ver arriba).
     ports:
       - "8050:8050"
     volumes:
