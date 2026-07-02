@@ -1,0 +1,28 @@
+# Orquestación de los servicios del proyecto.
+# Ambos servicios comparten la misma imagen (Dockerfile) y montan el repo como
+# volumen, de modo que comparten el MISMO archivo SQLite (db/monitoreo.sqlite).
+#
+# Nota: por ahora los comandos apuntan a stubs que aún no hacen nada real.
+
+services:
+  # Ingesta continua: APIs externas + tráfico simulado -> BD.
+  simulador:
+    build: .
+    command: python -m ingesta.scheduler
+    env_file: .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # Dashboard Dash + Plotly.
+  dashboard:
+    build: .
+    command: python -m dashboard.app
+    env_file: .env
+    ports:
+      - "8050:8050"
+    volumes:
+      - .:/app
+    depends_on:
+      - simulador
+    restart: unless-stopped

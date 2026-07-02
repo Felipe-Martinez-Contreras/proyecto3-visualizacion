@@ -1,0 +1,25 @@
+# Dependencias del proyecto.
+#
+# Pineo por versión MÍNIMA (`>=`), sin fijar techo. Para un proyecto educacional
+# y de vida corta esto da reproducibilidad razonable sin el mantenimiento de un
+# lockfile ni el riesgo de quedar clavados en versiones viejas. Si algún día "duele"
+# (rompe un update), se congela la versión concreta — no antes (ver PHILOSOPHY.md).
+
+# Dashboard y gráficos
+dash>=2.17
+plotly>=5.22
+
+# Transformación de datos
+pandas>=2.2
+
+# Cliente HTTP para consumir APIs externas (Open-Meteo, OpenAQ)
+requests>=2.32
+
+# Scheduler para la ingesta continua
+apscheduler>=3.10
+
+# Carga de variables de entorno desde .env
+python-dotenv>=1.0
+
+# Tests
+pytest>=8.2
