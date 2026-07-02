@@ -12,6 +12,9 @@ services:
       # Hora de Chile dentro del contenedor (la base python:3.12-slim ya trae
       # tzdata): así los timestamps quedan alineados con las corridas locales.
       TZ: America/Santiago
+      # Sin buffering de stdout: los logs del scheduler se ven en vivo
+      # (docker compose logs -f / lazydocker).
+      PYTHONUNBUFFERED: "1"
     volumes:
       - .:/app
     restart: unless-stopped
@@ -23,6 +26,7 @@ services:
     env_file: .env
     environment:
       TZ: America/Santiago  # misma zona horaria que el simulador (ver arriba).
+      PYTHONUNBUFFERED: "1"
     ports:
       - "8050:8050"
     volumes:
