@@ -25,7 +25,7 @@ del aire** por zona (Centro, Norte, Sur). Proyecto Unidad 3 — Visualización d
 ├── db/                 # Base de datos SQLite
 │   ├── schema.sql      #   esquema (3 tablas) — fuente de verdad
 │   ├── init_db.py      #   crea/recrea db/monitoreo.sqlite
-│   ├── sembrar_historico.py #  siembra historial sintético para la demo
+│   ├── sembrar_historico.py #  siembra historial para la demo (real o sintético)
 │   └── monitoreo.sqlite#   archivo de BD (versionado)
 ├── ingesta/            # Consumo de APIs, simulador de tráfico y scheduler
 ├── datos/              # Acceso a datos: conexión + repositorio de las 3 tablas
@@ -60,10 +60,19 @@ uv run python db/init_db.py
 # 4. Correr los tests
 uv run pytest
 
-# 5. (Opcional) Sembrar historial sintético de 24 h para la demo
-#    (--limpiar borra los datos previos; --semilla lo hace reproducible)
-uv run python -m db.sembrar_historico --limpiar --semilla 42
+# 5. (Opcional) Sembrar historial de 24 h para la demo
+#    Por defecto usa datos REALES de Open-Meteo (clima y calidad del aire
+#    históricos, resolución horaria, sin API key) + tráfico simulado.
+#    (--limpiar borra los datos previos)
+uv run python -m db.sembrar_historico --limpiar
+
+# Fallback sin red (o para más resolución): todo sintético, ticks por minuto.
+uv run python -m db.sembrar_historico --fuente sintetico --limpiar --semilla 42
 ```
+
+> La siembra `--fuente real` requiere internet; si Open-Meteo falla, el script
+> termina con error y sugiere `--fuente sintetico`. `--paso-minutos` solo aplica
+> a la fuente sintética (la real es horaria, ~24 ticks/día).
 
 > `uv run <cmd>` ejecuta dentro del `.venv` sin necesidad de activarlo. Si prefieres
 > activarlo: `source .venv/bin/activate` (Windows: `.venv\Scripts\activate`).
