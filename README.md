@@ -4,8 +4,10 @@ Dashboard interactivo en tiempo real que monitorea **movilidad urbana** y **cali
 del aire** por zona (Centro, Norte, Sur). Proyecto Unidad 3 — Visualización de Datos.
 
 > Estado: **en desarrollo**. Ingesta (APIs + simulador + scheduler) funcionando;
-> dashboard con la línea temporal de tráfico y refresco en vivo. Faltan los filtros
-> y las otras dos visualizaciones.
+> dashboard con refresco en vivo, las 3 visualizaciones del enunciado (línea
+> temporal de tráfico, PM2.5 vs vehículos, temperatura vs tráfico) y los 4
+> filtros interactivos (zona, rango de tiempo, métrica y congestión — esta
+> última derivada al vuelo, no almacenada).
 
 ## Stack
 
