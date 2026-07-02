@@ -79,8 +79,15 @@ uv run python -m db.sembrar_historico --fuente sintetico --limpiar --semilla 42
 
 ## Puesta en marcha (Docker)
 
+No requiere Python ni dependencias locales — solo Docker. Flujo completo
+(el mismo de la demo):
+
 ```bash
-docker compose up --build
+cp .env.example .env                     # 1. configuración (los defaults sirven)
+docker compose build                     # 2. imagen
+docker compose run --rm simulador \
+  python -m db.sembrar_historico --limpiar   # 3. (opcional) sembrar 24 h de historial
+docker compose up                        # 4. simulador + dashboard
 ```
 
 Levanta dos servicios que comparten el archivo SQLite vía volumen del repo:
