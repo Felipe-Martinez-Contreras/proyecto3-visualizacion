@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoreo Urbano · Presentación</title>
+<style>
+  :root{
+    --bg:#0e1116; --bg2:#161b22; --panel:#1b222c; --line:#2a3340;
+    --fg:#e6edf3; --muted:#93a1b1; --dim:#6b7889;
+    --accent:#4cc4ff; --accent2:#7ee787; --warn:#ffb454; --pink:#ff7b9c; --violet:#b392f0;
+    --mono:'SF Mono',ui-monospace,'Cascadia Code','JetBrains Mono',Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--fg);font-family:var(--sans);
+    overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+  #deck{height:100vh;width:100vw;position:relative}
+  .slide{
+    position:absolute;inset:0;display:none;flex-direction:column;
+    padding:4.5vh 6vw 8vh;opacity:0;transition:opacity .35s ease;
+    background:radial-gradient(1200px 600px at 80% -10%, #1a2534 0%, var(--bg) 55%);
+  }
+  .slide.active{display:flex;opacity:1}
+  .slide h1{font-size:3.4rem;line-height:1.05;letter-spacing:-.02em;font-weight:800}
+  .slide h2{font-size:2.15rem;font-weight:750;letter-spacing:-.01em;margin-bottom:.3rem}
+  .slide h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.2rem;margin-right:.6rem;font-weight:600}
+  .lead{color:var(--muted);font-size:1.25rem;max-width:60ch;line-height:1.5}
+  .kicker{color:var(--accent);font-family:var(--mono);font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.4rem}
+  .rule{height:2px;width:78px;background:linear-gradient(90deg,var(--accent),transparent);margin:1.1rem 0 1.6rem}
+  .grow{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .cols{display:grid;gap:1.6rem;margin-top:1.4rem}
+  .c2{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:repeat(3,1fr)}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.5rem;
+  }
+  .card h3{font-size:1.15rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.55rem}
+  .card p{color:var(--muted);font-size:1.02rem;line-height:1.5}
+  .card .ico{font-size:1.3rem}
+  ul.feat{list-style:none;display:flex;flex-direction:column;gap:.85rem;margin-top:.6rem}
+  ul.feat li{display:flex;gap:.8rem;font-size:1.18rem;line-height:1.45;align-items:flex-start}
+  ul.feat li::before{content:"▸";color:var(--accent);font-weight:700;margin-top:.05rem}
+  ul.feat li b{color:var(--fg)}
+  ul.feat li span{color:var(--muted)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:.82rem;padding:.25rem .6rem;border-radius:7px;
+    background:#0d3049;color:var(--accent);border:1px solid #17475f;margin:.2rem .3rem .2rem 0}
+  .tag.g{background:#0f3320;color:var(--accent2);border-color:#1c5230}
+  .tag.w{background:#3a2a0f;color:var(--warn);border-color:#5a441a}
+  .tag.v{background:#2a1f45;color:var(--violet);border-color:#3f2f66}
+  .mono{font-family:var(--mono)}
+  code{font-family:var(--mono);background:#0b0f14;border:1px solid var(--line);border-radius:6px;padding:.1rem .4rem;font-size:.9em;color:var(--accent2)}
+  pre{background:#0b0f14;border:1px solid var(--line);border-radius:12px;padding:1.2rem 1.4rem;
+    font-family:var(--mono);font-size:.95rem;line-height:1.65;overflow:auto;color:#c9d5e0}
+  pre .k{color:var(--pink)} pre .s{color:var(--accent2)} pre .c{color:var(--dim)} pre .f{color:var(--accent)} pre .n{color:var(--warn)}
+  /* pipeline diagram */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-top:1rem}
+  .node{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:1.1rem 1rem;position:relative;text-align:center}
+  .node .t{font-weight:700;font-size:1.05rem}
+  .node .d{color:var(--dim);font-family:var(--mono);font-size:.78rem;margin-top:.35rem}
+  .arrow{display:flex;align-items:center;color:var(--accent);font-size:1.6rem;padding:0 .55rem;font-weight:700}
+  .badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:var(--mono);
+    font-size:.68rem;letter-spacing:.1em;color:var(--bg);background:var(--accent);padding:.12rem .55rem;border-radius:20px;text-transform:uppercase;font-weight:700}
+  .node.ac{border-color:#17475f} .node.ac .badge{background:var(--accent)}
+  .node.gc{border-color:#1c5230} .node.gc .badge{background:var(--accent2)}
+  .node.wc{border-color:#5a441a} .node.wc .badge{background:var(--warn)}
+  .node.vc{border-color:#3f2f66} .node.vc .badge{background:var(--violet)}
+  /* data model tables */
+  .db{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;margin-top:1rem}
+  .tbl{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tbl .h{background:#0d3049;color:var(--accent);font-family:var(--mono);font-weight:700;padding:.7rem 1rem;font-size:1rem;border-bottom:1px solid var(--line)}
+  .tbl .r{padding:.5rem 1rem;font-family:var(--mono);font-size:.9rem;color:var(--muted);border-bottom:1px solid #202833;display:flex;justify-content:space-between}
+  .tbl .r:last-child{border-bottom:none}
+  .tbl .r .ty{color:var(--dim);font-size:.8rem}
+  .tbl .r.pk{color:var(--accent2)}
+  .rel{text-align:center;color:var(--dim);margin-top:1rem;font-family:var(--mono);font-size:.95rem}
+  .rel b{color:var(--warn)}
+  .metrics{display:flex;gap:2.5rem;margin-top:1.6rem;flex-wrap:wrap}
+  .metric .v{font-size:2.9rem;font-weight:800;color:var(--accent);line-height:1}
+  .metric .l{color:var(--muted);font-size:1rem;margin-top:.35rem}
+  .two{display:grid;grid-template-columns:1.05fr .95fr;gap:2rem;align-items:center;flex:1}
+  .note{color:var(--dim);font-size:.95rem;margin-top:1rem;line-height:1.5;border-left:2px solid var(--line);padding-left:1rem}
+  .center{align-items:center;justify-content:center;text-align:center}
+  .center .lead{margin:0 auto}
+  /* layered architecture (pág. 6) */
+  .arch{display:flex;flex-direction:column;gap:.3rem;margin-top:.5rem}
+  .layer{display:flex;align-items:center;gap:1.2rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.8rem 1.3rem}
+  .layer .lname{flex:0 0 235px;font-weight:700;font-size:1rem;color:var(--fg);line-height:1.25}
+  .layer .lname em{display:block;color:var(--dim);font-family:var(--mono);font-size:.7rem;font-style:normal;font-weight:400;margin-top:.15rem}
+  .layer .lbody{flex:1;display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:.82rem;background:#0d3049;color:var(--accent);border:1px solid #17475f;border-radius:8px;padding:.35rem .7rem}
+  .chip em{color:var(--dim);font-style:normal;font-size:.88em}
+  .mini{color:var(--accent);font-weight:700;font-size:1rem}
+  .down{text-align:center;color:var(--accent);font-size:1.1rem;line-height:1;font-weight:700}
+  .down em{color:var(--dim);font-family:var(--mono);font-size:.72rem;font-style:normal;margin-left:.5rem}
+  .layer.ing .chip{background:#2a1f45;color:var(--violet);border-color:#3f2f66}
+  .layer.ing .mini{color:var(--violet)}
+  .layer.db{border-color:#1c5230} .layer.db .chip{background:#0f3320;color:var(--accent2);border-color:#1c5230}
+  .layer.usr{border-color:#5a441a} .layer.usr .chip{background:#3a2a0f;color:var(--warn);border-color:#5a441a}
+  /* progress + chrome */
+  #bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:50;transition:width .3s}
+  #foot{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;
+    padding:.7rem 1.6rem;font-family:var(--mono);font-size:.8rem;color:var(--dim);z-index:40}
+  #foot .proj{color:var(--muted)}
+  #dots{display:flex;gap:6px}
+  #dots i{width:8px;height:8px;border-radius:50%;background:var(--line);cursor:pointer;transition:all .2s}
+  #dots i.on{background:var(--accent);transform:scale(1.25)}
+  .hint{position:fixed;bottom:.7rem;left:50%;transform:translateX(-50%);color:var(--dim);font-size:.78rem;font-family:var(--mono);z-index:40;opacity:.7}
+  .stack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem;margin-top:1rem}
+  .srow{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:1rem 1.2rem}
+  .srow .st{font-weight:700;color:var(--fg);margin-bottom:.3rem;font-size:1.05rem;display:flex;align-items:center;gap:.5rem}
+  .srow .sd{color:var(--muted);font-size:.98rem;line-height:1.4}
+  .srow .sd b{color:var(--accent)}
+  .big-quote{font-size:1.9rem;line-height:1.4;font-weight:650;max-width:24ch;letter-spacing:-.01em}
+  .big-quote .hl{color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="deck">
+
+<!-- 1 — Portada -->
+<section class="slide active center">
+  <div class="grow center">
+    <div class="kicker">Unidad 3 · Visualización de Datos — U. de Talca</div>
+    <h1>Monitoreo de Movilidad Urbana<br>y Calidad del Aire</h1>
+    <div class="rule" style="margin-left:auto;margin-right:auto"></div>
+    <p class="lead">Dashboard interactivo <b style="color:var(--accent2)">en tiempo real</b> para un Ministerio de Transporte y Medio Ambiente. Congestión vehicular + contaminación + clima, por zona y horario.</p>
+    <div style="margin-top:2rem">
+      <span class="tag">Python 3.12</span>
+      <span class="tag g">Dash + Plotly</span>
+      <span class="tag">SQLite</span>
+      <span class="tag w">Docker</span>
+      <span class="tag v">APScheduler</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 — El problema -->
+<section class="slide">
+  <h2><span class="num">01</span>El problema</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <p class="lead">Una autoridad pública necesita <b style="color:var(--fg)">decidir en el momento</b>: restricciones vehiculares, alertas ambientales, ajuste de semáforos inteligentes. Pero los datos de tráfico, aire y clima viven <b style="color:var(--fg)">dispersos y sin relacionar</b>.</p>
+    <div class="cols c3">
+      <div class="card"><h3><span class="ico">🚗</span>Movilidad</h3><p>¿Dónde y cuándo se satura el tráfico? ¿Qué zonas están al límite?</p></div>
+      <div class="card"><h3><span class="ico">🌫️</span>Aire</h3><p>¿La calidad del aire cruza umbrales críticos? PM2.5, NO₂, O₃.</p></div>
+      <div class="card"><h3><span class="ico">🔗</span>Relación</h3><p>¿Más tráfico ⇒ más contaminación? ¿Cómo influye el clima?</p></div>
+    </div>
+    <div class="note">Ciudad de ejemplo: Santiago · 3 zonas — Centro, Norte, Sur. El analista necesita <b>ver el patrón</b>, no leer tablas crudas.</div>
+  </div>
+</section>
+
+<!-- 3 — La solución -->
+<section class="slide">
+  <h2><span class="num">02</span>La solución</h2>
+  <div class="rule"></div>
+  <div class="grow two">
+    <div>
+      <ul class="feat">
+        <li><b>Tablero en vivo</b> <span>— se refresca solo cada 5 s, sin recargar la página.</span></li>
+        <li><b>3 visualizaciones</b> <span>— tráfico en el tiempo, aire vs tráfico, clima vs tráfico.</span></li>
+        <li><b>4 filtros interactivos</b> <span>— zona, rango de tiempo, métrica y estado de congestión.</span></li>
+        <li><b>Datos reales + simulados</b> <span>— clima y aire de Open-Meteo; tráfico simulado.</span></li>
+      </ul>
+      <div class="note">Usuario final: <b>analista / autoridad pública</b>. Una sola pantalla, decisión inmediata.</div>
+    </div>
+    <div class="card" style="background:var(--bg2)">
+      <div class="mono" style="color:var(--dim);font-size:.8rem;margin-bottom:.8rem">http://localhost:8050</div>
+      <div style="border:1px solid var(--line);border-radius:8px;padding:.8rem;background:var(--panel)">
+        <div style="font-weight:700;font-size:.95rem">Monitoreo de Movilidad Urbana y Calidad del Aire</div>
+        <div style="color:var(--dim);font-size:.75rem;margin:.3rem 0 .8rem">Santiago — datos en vivo, cada 5 s</div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.8rem">
+          <span class="tag" style="font-size:.68rem">Zona ▾</span>
+          <span class="tag" style="font-size:.68rem">Rango ▾</span>
+          <span class="tag" style="font-size:.68rem">Métrica ☑</span>
+          <span class="tag" style="font-size:.68rem">Congestión ▾</span>
+        </div>
+        <div style="height:46px;border-radius:6px;background:linear-gradient(90deg,#12314a,#0d2033);margin-bottom:.5rem;position:relative;overflow:hidden">
+          <svg width="100%" height="46" viewBox="0 0 300 46" preserveAspectRatio="none"><polyline points="0,34 40,28 80,32 120,18 160,24 200,12 240,20 300,10" fill="none" stroke="#4cc4ff" stroke-width="2"/></svg>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <div style="flex:1;height:40px;border-radius:6px;background:#132a1e"></div>
+          <div style="flex:1;height:40px;border-radius:6px;background:#2a230f"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 — Vistas y filtros -->
+<section class="slide">
+  <h2><span class="num">03</span>Las 3 vistas y los 4 filtros</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="cols c3">
+      <div class="card"><h3>① Línea temporal</h3><p><b style="color:var(--fg)">Vehículos vs tiempo.</b> Cómo evoluciona la congestión de cada zona a lo largo del día.</p></div>
+      <div class="card"><h3>② Scatter</h3><p><b style="color:var(--fg)">PM2.5 vs vehículos.</b> ¿Sube la contaminación con el tráfico? Cruce aire + tráfico.</p></div>
+      <div class="card"><h3>③ Clima vs congestión</h3><p><b style="color:var(--fg)">Temperatura vs tráfico.</b> El clima global frente al volumen vehicular.</p></div>
+    </div>
+    <div class="cols c2" style="margin-top:1.2rem">
+      <div class="card">
+        <h3 style="color:var(--accent2)">Filtros que tocan los datos</h3>
+        <p><b style="color:var(--fg)">Zona</b> (Centro/Norte/Sur) y <b style="color:var(--fg)">Rango</b> (5 min / 1 h / día) → se aplican en la consulta SQL. <b style="color:var(--fg)">Congestión</b> (bajo/medio/alto) → derivada al vuelo sobre el tráfico.</p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--warn)">Filtro que toca la vista</h3>
+        <p><b style="color:var(--fg)">Métrica</b> (tráfico/aire/clima) → muestra u oculta cada panel sin re-consultar. Todos los filtros comparten <b style="color:var(--fg)">un mismo callback</b>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 — Arquitectura completa (pág. 6) -->
+<section class="slide">
+  <h2><span class="num">04</span>Arquitectura completa del sistema</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="arch">
+      <div class="layer">
+        <div class="lname">Fuentes de datos externas</div>
+        <div class="lbody">
+          <span class="chip">API Clima · Open-Meteo</span>
+          <span class="chip">API Calidad Aire · Open-Meteo AQ <em>(OpenAQ fallback)</em></span>
+          <span class="chip">API Tráfico · simulada</span>
+        </div>
+      </div>
+      <div class="down">↓</div>
+      <div class="layer ing">
+        <div class="lname">Ingesta y procesamiento<em>Python</em></div>
+        <div class="lbody">
+          <span class="chip">Motor de ingesta · APScheduler</span><span class="mini">→</span>
+          <span class="chip">Simulador · ruido controlado</span><span class="mini">→</span>
+          <span class="chip">Normalización · Pandas</span>
+        </div>
+      </div>
+      <div class="down">↓<em>inserción continua cada ~10 s</em></div>
+      <div class="layer db">
+        <div class="lname">Persistencia · SQLite<em>archivo único · volumen Docker</em></div>
+        <div class="lbody">
+          <span class="chip">Trafico</span>
+          <span class="chip">Calidad_Aire_Hist</span>
+          <span class="chip">Condiciones_Clima</span>
+        </div>
+      </div>
+      <div class="down">↓</div>
+      <div class="layer">
+        <div class="lname">Capa de visualización<em>dcc.Interval + callbacks reactivos</em></div>
+        <div class="lbody">
+          <span class="chip">Dash backend</span><span class="mini">→</span>
+          <span class="chip">Filtros interactivos</span><span class="mini">→</span>
+          <span class="chip">Gráficos Plotly</span>
+        </div>
+      </div>
+      <div class="down">↓</div>
+      <div class="layer usr">
+        <div class="lname">Usuario final</div>
+        <div class="lbody"><span class="chip">Analista / Autoridad pública</span></div>
+      </div>
+    </div>
+    <div class="note">Fiel al plano de la <b>pág. 6</b> del enunciado. Dos <b>ajustes de equipo</b>: <b>SQLite</b> en lugar de PostgreSQL (modelo simple, migración trivial) y <b>Open-Meteo Air Quality</b> como fuente primaria de aire (sin API key), con OpenAQ de respaldo. Ingesta y dashboard corren como <b>2 servicios Docker</b> desacoplados por la BD.</div>
+  </div>
+</section>
+
+<!-- 6 — Stack -->
+<section class="slide">
+  <h2><span class="num">05</span>Stack tecnológico</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="stack-grid">
+      <div class="srow"><div class="st">🐍 Python 3.12 · <span class="mono" style="font-size:.85rem;color:var(--accent2)">uv</span></div><div class="sd">Un solo lenguaje de punta a punta. Entorno y dependencias con <b>uv</b> en un <code>.venv</code> aislado.</div></div>
+      <div class="srow"><div class="st">📊 Dash + Plotly</div><div class="sd">Backend Python + gráficos interactivos. Refresco en vivo con <b>dcc.Interval</b> y callbacks.</div></div>
+      <div class="srow"><div class="st">🐼 Pandas</div><div class="sd">Transformación y cruces. Todo el pipeline habla <b>DataFrame</b>: fuentes, repositorio y vistas.</div></div>
+      <div class="srow"><div class="st">🗃️ SQLite</div><div class="sd">Un archivo único <code>db/monitoreo.sqlite</code>, <b>versionado en el repo</b> y compartido por el equipo.</div></div>
+      <div class="srow"><div class="st">⏱️ APScheduler</div><div class="sd"><b>BlockingScheduler</b> para la ingesta continua: intervalo, <i>coalesce</i>, <i>max_instances</i>=1.</div></div>
+      <div class="srow"><div class="st">🐳 Docker + Compose</div><div class="sd">Dos servicios sobre <b>una misma imagen</b>, orquestados y compartiendo la BD por volumen.</div></div>
+    </div>
+    <div class="note">Además: <b>requests</b> (clientes de API) y <b>python-dotenv</b> (config por <code>.env</code>). Dependencias pineadas por versión mínima, sin lockfile — proyecto de vida corta.</div>
+  </div>
+</section>
+
+<!-- 7 — Modelo de datos -->
+<section class="slide">
+  <h2><span class="num">06</span>Modelo de datos — 3 tablas</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="db">
+      <div class="tbl">
+        <div class="h">Trafico</div>
+        <div class="r pk">id <span class="ty">PK</span></div>
+        <div class="r">timestamp <span class="ty">TEXT</span></div>
+        <div class="r">zona <span class="ty">TEXT</span></div>
+        <div class="r">vehiculos <span class="ty">INT</span></div>
+        <div class="r">velocidad_promedio <span class="ty">REAL</span></div>
+      </div>
+      <div class="tbl">
+        <div class="h">Calidad_Aire_Hist</div>
+        <div class="r pk">id <span class="ty">PK</span></div>
+        <div class="r">timestamp <span class="ty">TEXT</span></div>
+        <div class="r">zona <span class="ty">TEXT</span></div>
+        <div class="r">pm25 <span class="ty">REAL</span></div>
+        <div class="r">no2 · o3 <span class="ty">REAL</span></div>
+      </div>
+      <div class="tbl">
+        <div class="h">Condiciones_Clima</div>
+        <div class="r pk">id <span class="ty">PK</span></div>
+        <div class="r">timestamp <span class="ty">TEXT</span></div>
+        <div class="r">temperatura <span class="ty">REAL</span></div>
+        <div class="r">humedad <span class="ty">REAL</span></div>
+        <div class="r">viento <span class="ty">REAL</span></div>
+      </div>
+    </div>
+    <div class="rel">Se relacionan por <b>timestamp</b> &nbsp;(+&nbsp;<b>zona</b> cuando aplica). &nbsp;·&nbsp; El clima es <b>global</b> para la ciudad → sin columna zona.</div>
+    <div class="note"><b>Fiel al diagrama entidad-relación de la pág. 4</b> del enunciado: mismas tablas, columnas y tipos. El estado de congestión (bajo/medio/alto) <b>no se almacena</b>: es un valor derivado, se calcula al leer.</div>
+  </div>
+</section>
+
+<!-- 8 — Ingesta -->
+<section class="slide">
+  <h2><span class="num">07</span>Ingesta — un <span class="mono" style="font-size:1.6rem;color:var(--accent)">tick</span> del ciclo</h2>
+  <div class="rule"></div>
+  <div class="grow two">
+    <div>
+      <ul class="feat">
+        <li><b>Orden fijo por tick:</b> <span>tráfico simulado → aire por zona → clima global.</span></li>
+        <li><b>Timestamp compartido</b> <span>por todas las filas del tick → coherencia temporal para los cruces.</span></li>
+        <li><b>Aislamiento de fallos:</b> <span>cada fuente en su try/except; si una cae (red), el tick sigue con las demás.</span></li>
+        <li><b>Timestamp inyectable</b> <span>→ ejecución determinista, sin depender de la hora real.</span></li>
+      </ul>
+    </div>
+    <pre><span class="k">def</span> <span class="f">ejecutar_tick</span>(timestamp=<span class="n">None</span>):
+    <span class="c"># todas las filas → mismo instante</span>
+    ts = timestamp <span class="k">or</span> now()
+
+    <span class="k">try</span>:  <span class="c"># tráfico (sin red)</span>
+        df = simulador.<span class="f">generar_trafico</span>(ts)
+        repo.<span class="f">insertar_trafico</span>(df)
+    <span class="k">except</span> Exception <span class="k">as</span> e:
+        log(e)  <span class="c"># registra y sigue</span>
+
+    <span class="k">for</span> zona <span class="k">in</span> ZONAS:  <span class="c"># aire por zona</span>
+        ...
+    <span class="c"># clima global</span>
+    <span class="k">return</span> {<span class="s">"trafico"</span>:3, <span class="s">"aire"</span>:3, <span class="s">"clima"</span>:1}</pre>
+  </div>
+</section>
+
+<!-- 9 — Fuentes + fallback -->
+<section class="slide">
+  <h2><span class="num">08</span>Fuentes de datos — gratis, con fallback</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="cols c3">
+      <div class="card"><h3><span class="tag g">clima</span></h3><p><b style="color:var(--fg)">Open-Meteo.</b> Temperatura, humedad, viento. Gratis, <b style="color:var(--accent2)">sin API key</b>. Una coordenada (clima global).</p></div>
+      <div class="card"><h3><span class="tag">aire</span></h3><p><b style="color:var(--fg)">Open-Meteo Air Quality</b> por defecto (sin key), con <b>OpenAQ</b> como fallback configurable. PM2.5, NO₂, O₃.</p></div>
+      <div class="card"><h3><span class="tag w">tráfico</span></h3><p><b style="color:var(--fg)">Simulado.</b> No hay API pública fiable. Ruido acotado ±25% sobre perfiles realistas por zona.</p></div>
+    </div>
+    <div class="cols c2" style="margin-top:1.3rem">
+      <div class="card">
+        <h3>🔁 Fallback automático</h3>
+        <p>Si la fuente primaria de aire lanza excepción (red/config), se intenta la otra. Ambas se <b style="color:var(--fg)">normalizan al mismo esquema</b> <code>timestamp,zona,pm25,no2,o3</code> → intercambiables.</p>
+      </div>
+      <div class="card">
+        <h3>🎲 Simulación controlada</h3>
+        <p>El Centro más congestionado, el Sur más fluido. <b style="color:var(--fg)">RNG y timestamp inyectables</b> → misma semilla, mismo resultado. Totalmente reproducible.</p>
+      </div>
+    </div>
+    <div class="note">Decisión de equipo: se priorizó <b>Open-Meteo Air Quality</b> sobre el OpenAQ del enunciado para evitar registro/keys. Ambas gratuitas, mismos contaminantes objetivo.</div>
+  </div>
+</section>
+
+<!-- 10 — Dashboard reactivo -->
+<section class="slide">
+  <h2><span class="num">09</span>Dashboard — reactivo y en vivo</h2>
+  <div class="rule"></div>
+  <div class="grow two">
+    <pre><span class="f">@app.callback</span>(
+  <span class="c"># 3 figuras + 3 visibilidades de panel</span>
+  Output(<span class="s">"grafico-trafico"</span>, <span class="s">"figure"</span>),
+  Output(<span class="s">"grafico-aire"</span>, <span class="s">"figure"</span>),
+  Output(<span class="s">"grafico-clima"</span>, <span class="s">"figure"</span>),
+  ...
+  Input(<span class="s">"intervalo-refresco"</span>, <span class="s">"n_intervals"</span>),
+  Input(<span class="s">"filtro-zona"</span>, <span class="s">"value"</span>),
+  Input(<span class="s">"filtro-rango"</span>, <span class="s">"value"</span>),
+  Input(<span class="s">"filtro-metrica"</span>, <span class="s">"value"</span>),
+  Input(<span class="s">"filtro-congestion"</span>, <span class="s">"value"</span>),
+)
+<span class="k">def</span> <span class="f">actualizar</span>(n, zona, rango, met, cong):
+    <span class="c"># re-consulta la BD y redibuja</span>
+    <span class="k">return</span> construir_figuras(...)</pre>
+    <div>
+      <ul class="feat">
+        <li><b>Un callback, dos disparadores:</b> <span>el <code>dcc.Interval</code> (tiempo) y cualquier cambio de filtro entran por la misma puerta.</span></li>
+        <li><b>Estado en la UI, no en el server:</b> <span>Dash mantiene el valor de cada filtro; el callback solo reacciona.</span></li>
+        <li><b>Congestión derivada</b> <span>se aplica al tráfico <i>antes</i> de los cruces → las 3 figuras muestran el mismo subconjunto.</span></li>
+        <li><b>Métrica = visibilidad:</b> <span>enseña u oculta paneles sin tocar los datos.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 11 — Patrones -->
+<section class="slide">
+  <h2><span class="num">10</span>Patrones y decisiones de diseño</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="cols c2">
+      <div class="card">
+        <h3><span class="ico">🧩</span>Dos niveles: lógica pura vs runtime</h3>
+        <p>En ingesta y dashboard, la <b style="color:var(--fg)">lógica de datos</b> (tick, consultas, figuras) se separa del <b style="color:var(--fg)">runtime</b> (scheduler, servidor Dash). Se puede ejecutar sin levantar procesos.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ico">💉</span>Inyección de dependencias</h3>
+        <p><b style="color:var(--fg)">Timestamp y RNG inyectables</b> por todos lados. Al fijar la hora y la semilla, la ejecución es <b style="color:var(--fg)">determinista y reproducible</b>: misma semilla, mismo resultado.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🗂️</span>Repositorio (acceso a datos)</h3>
+        <p>Una capa <code>datos/repositorio.py</code> concentra insert/consulta. El resto del código <b style="color:var(--fg)">no escribe SQL</b>. Cambiar SQLite→Postgres toca un solo lugar.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🛡️</span>Consultas parametrizadas</h3>
+        <p>WHERE con placeholders <code>?</code> y <code>params=</code> — <b style="color:var(--fg)">nunca f-strings</b> con valores del usuario. Sin inyección SQL.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ico">📐</span>Esquema = única fuente de verdad</h3>
+        <p><code>schema.sql</code> define las tablas; los productores entregan DataFrames con esas columnas exactas → <code>to_sql</code> mapea por nombre, sin boilerplate.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🧮</span>Datos derivados, no almacenados</h3>
+        <p>La congestión es una <b style="color:var(--fg)">función pura</b> sobre vehículos/velocidad. Se calcula al leer → no hay estado que sincronizar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 — Calidad -->
+<section class="slide">
+  <h2><span class="num">11</span>Calidad, contenedores y repro</h2>
+  <div class="rule"></div>
+  <div class="grow">
+    <div class="metrics">
+      <div class="metric"><div class="v">2</div><div class="l">servicios en docker-compose</div></div>
+      <div class="metric"><div class="v">3 · 4</div><div class="l">visualizaciones · filtros</div></div>
+      <div class="metric"><div class="v">~10s</div><div class="l">cadencia de ingesta</div></div>
+      <div class="metric"><div class="v">5s</div><div class="l">refresco del dashboard</div></div>
+    </div>
+    <div class="cols c2" style="margin-top:1.8rem">
+      <div class="card">
+        <h3><span class="ico">🐳</span>Docker reproducible</h3>
+        <p>Una imagen <code>python:3.12-slim</code>, dos servicios (<span class="mono">simulador</span> + <span class="mono">dashboard</span>) que comparten la BD por volumen. <code>TZ=America/Santiago</code> y logs sin buffering. <b style="color:var(--fg)">Levanta con un solo <span class="mono">docker compose up</span></b>.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🌱</span>Siembra para la demo</h3>
+        <p><code>sembrar_historico</code> puebla 24 h de historial: <b style="color:var(--fg)">datos reales</b> de Open-Meteo (clima + aire horarios) o <b style="color:var(--fg)">sintéticos</b> como fallback sin red. La demo arranca con la pantalla ya llena.</p>
+      </div>
+    </div>
+    <div class="note">Batería de <b>tests con pytest</b> que no dependen de red ni reloj (todo inyectable), en verde antes de cerrar cada hito.</div>
+  </div>
+</section>
+
+<!-- 13 — Cierre -->
+<section class="slide center">
+  <div class="grow center">
+    <div class="kicker">Cierre</div>
+    <h1 style="font-size:2.9rem">Funcionando en tiempo real</h1>
+    <div class="rule" style="margin:1.5rem auto 1.9rem"></div>
+    <div class="cols c3" style="max-width:960px;margin:0 auto">
+      <div class="card"><h3 style="justify-content:center;color:var(--accent2)">✔ Visualización</h3><p style="text-align:center">Las 3 vistas + 4 filtros interactivos, con refresco en vivo.</p></div>
+      <div class="card"><h3 style="justify-content:center;color:var(--accent2)">✔ Arquitectura</h3><p style="text-align:center">Las 5 capas de la pág. 6, de la ingesta al gráfico.</p></div>
+      <div class="card"><h3 style="justify-content:center;color:var(--accent2)">✔ Datos</h3><p style="text-align:center">Modelo fiel a la pág. 4; APIs reales + tráfico simulado.</p></div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div id="foot">
+  <span class="proj">Monitoreo Urbano · Unidad 3</span>
+  <div id="dots"></div>
+  <span><span id="cur">1</span> / <span id="tot">13</span></span>
+</div>
+<div class="hint">← → · espacio · F pantalla completa</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  const bar=document.getElementById('bar');
+  const cur=document.getElementById('cur');
+  document.getElementById('tot').textContent=slides.length;
+  let i=0;
+  slides.forEach((_,n)=>{const d=document.createElement('i');d.onclick=()=>go(n);dots.appendChild(d);});
+  const dotEls=[...dots.children];
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    dotEls.forEach((d,k)=>d.classList.toggle('on',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    cur.textContent=i+1;
+  }
+  function next(){go(i+1)} function prev(){go(i-1)}
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();next();}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();prev();}
+    else if(e.key==='Home')go(0);
+    else if(e.key==='End')go(slides.length-1);
+    else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+  });
+  let sx=0;
+  document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+  document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50){dx<0?next():prev();}},{passive:true});
+  go(0);
+</script>
+</body>
+</html>

@@ -51,7 +51,7 @@ def figura_trafico(df: pd.DataFrame) -> go.Figure:
                 continue
             fig.add_trace(
                 go.Scatter(
-                    x=pd.to_datetime(df_zona["timestamp"]),
+                    x=pd.to_datetime(df_zona["timestamp"], format="ISO8601"),
                     y=df_zona["vehiculos"],
                     mode="lines+markers",
                     name=zona,
