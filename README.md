@@ -1,115 +1,89 @@
 # Monitoreo de Movilidad Urbana y Calidad del Aire
 
-Dashboard interactivo en tiempo real que monitorea **movilidad urbana** y **calidad
-del aire** por zona (Centro, Norte, Sur). Proyecto Unidad 3 — Visualización de Datos.
+Dashboard interactivo en tiempo real que monitorea **movilidad urbana** y **calidad del aire** por zona (Centro, Norte, Sur). Proyecto de la Unidad 3 del curso de Visualización de Datos, Universidad de Talca (2026-1).
 
-> Estado: **en desarrollo**. Ingesta (APIs + simulador + scheduler) funcionando;
-> dashboard con refresco en vivo, las 3 visualizaciones del enunciado (línea
-> temporal de tráfico, PM2.5 vs vehículos, temperatura vs tráfico) y los 4
-> filtros interactivos (zona, rango de tiempo, métrica y congestión — esta
-> última derivada al vuelo, no almacenada).
+**Autores:** Felipe Martínez Contreras y Jonathan Falcon
+
+![Dashboard: filtros y tráfico por zona](docs/dashboard.png)
+![Dashboard: contaminación y clima vs tráfico](docs/dashboard-2.png)
+
+## Qué hace
+
+- Muestra en un dashboard con refresco en vivo el estado de la movilidad, la calidad del aire (PM2.5, NO₂, O₃) y el clima.
+- Incluye 3 visualizaciones: línea temporal de tráfico, PM2.5 vs. vehículos, y temperatura vs. tráfico.
+- Ofrece 4 filtros interactivos: zona, rango de tiempo, métrica y congestión (esta última se deriva al vuelo, no se almacena).
+- **Origen de los datos:** el clima y la calidad del aire provienen de [Open-Meteo](https://open-meteo.com/) (datos reales, sin API key), consultados para tres zonas de Santiago (Centro, Norte y Sur). El tráfico es **simulado**.
+- **Calidad del aire, fuentes:** Open-Meteo Air Quality es la fuente por defecto; [OpenAQ](https://openaq.org/) v3 está implementado como fuente alternativa configurable (requiere API key e ids de estación en `.env`). Si la fuente primaria falla, se intenta la otra automáticamente.
 
 ## Stack
 
-- **Python 3.12** — ingesta (scheduler) + dashboard. Entorno gestionado con **`uv`** en un `.venv`.
-- **SQLite** — un único archivo `db/monitoreo.sqlite`, versionado en el repo y
-  compartido por el equipo.
-- **Dash + Plotly** — visualización · **Pandas** — transformación.
-- **APScheduler** — ingesta continua · **requests** — clientes de API.
-- **Docker + docker-compose** — orquestación.
+- **Python 3.12**: ingesta (scheduler) y dashboard. Entorno gestionado con `uv`.
+- **SQLite**: un único archivo `db/monitoreo.sqlite`, compartido por el equipo.
+- **Dash + Plotly** para visualización y **Pandas** para transformación.
+- **APScheduler** para la ingesta continua y **requests** para las APIs.
+- **pytest** para los tests (las pruebas no llaman a la red: usan mocks).
+- **Docker + docker-compose** para la orquestación.
+
+## Cómo ejecutarlo (Docker)
+
+No requiere Python ni dependencias locales, solo Docker:
+
+```bash
+cp .env.example .env                     # 1. configuración (los valores por defecto sirven)
+docker compose build                     # 2. construir la imagen
+docker compose run --rm simulador \
+  python -m db.sembrar_historico --limpiar   # 3. (opcional) sembrar 24 h de historial
+docker compose up                        # 4. levantar simulador + dashboard
+```
+
+Se levantan dos servicios que comparten el archivo SQLite mediante un volumen:
+
+- **simulador:** ingesta continua (`ingesta.scheduler`).
+- **dashboard:** app Dash en [http://localhost:8050](http://localhost:8050).
+
+Ambos contenedores usan la zona horaria `America/Santiago`.
+
+## Cómo ejecutarlo (local)
+
+Requiere Python 3.12 y [`uv`](https://docs.astral.sh/uv/).
+
+```bash
+uv venv --python 3.12
+uv pip install -r requirements.txt
+cp .env.example .env
+uv run python db/init_db.py              # crea la base de datos
+uv run pytest                            # tests
+uv run python -m dashboard.app           # dashboard en http://localhost:8050
+```
+
+Para sembrar historial de 24 h con datos reales de Open-Meteo: `uv run python -m db.sembrar_historico --limpiar`. Sin conexión, usa `--fuente sintetico`.
 
 ## Estructura del proyecto
 
 ```
 .
-├── db/                 # Base de datos SQLite
-│   ├── schema.sql      #   esquema (3 tablas) — fuente de verdad
-│   ├── init_db.py      #   crea/recrea db/monitoreo.sqlite
-│   ├── sembrar_historico.py #  siembra historial para la demo (real o sintético)
-│   └── monitoreo.sqlite#   archivo de BD (versionado)
-├── ingesta/            # Consumo de APIs, simulador de tráfico y scheduler
-├── datos/              # Acceso a datos: conexión + repositorio de las 3 tablas
-├── dashboard/          # App Dash + Plotly (layout, callbacks, vistas)
-├── tests/              # Tests con pytest
-├── requirements.txt
+├── db/          # esquema SQLite, creación de la BD y siembra de historial
+├── ingesta/     # consumo de APIs, simulador de tráfico y scheduler
+├── datos/       # acceso a datos: conexión y repositorio de las 3 tablas
+├── dashboard/   # app Dash + Plotly (layout, callbacks y vistas)
+├── tests/       # tests con pytest
 ├── Dockerfile
 ├── docker-compose.yml
-└── .env.example
+└── requirements.txt
 ```
-
-Se eligió una estructura de **paquetes por capa a nivel raíz** (`ingesta`, `datos`,
-`dashboard`) en lugar de un layout `src/`: para un proyecto educacional y de vida corta
-es más plano y fácil de navegar, sin dejar de separar responsabilidades con claridad.
-
-## Puesta en marcha (local)
-
-Requiere **Python 3.12** y **[`uv`](https://docs.astral.sh/uv/)** (`brew install uv`).
-El entorno se gestiona siempre con `uv` dentro de un `.venv`.
-
-```bash
-# 1. Entorno virtual (Python 3.12) e instalación de dependencias
-uv venv --python 3.12
-uv pip install -r requirements.txt
-
-# 2. Variables de entorno (opcional; hay valores por defecto)
-cp .env.example .env
-
-# 3. Crear la base de datos (idempotente)
-uv run python db/init_db.py
-
-# 4. Correr los tests
-uv run pytest
-
-# 5. (Opcional) Sembrar historial de 24 h para la demo
-#    Por defecto usa datos REALES de Open-Meteo (clima y calidad del aire
-#    históricos, resolución horaria, sin API key) + tráfico simulado.
-#    (--limpiar borra los datos previos)
-uv run python -m db.sembrar_historico --limpiar
-
-# Fallback sin red (o para más resolución): todo sintético, ticks por minuto.
-uv run python -m db.sembrar_historico --fuente sintetico --limpiar --semilla 42
-```
-
-> La siembra `--fuente real` requiere internet; si Open-Meteo falla, el script
-> termina con error y sugiere `--fuente sintetico`. `--paso-minutos` solo aplica
-> a la fuente sintética (la real es horaria, ~24 ticks/día).
-
-> `uv run <cmd>` ejecuta dentro del `.venv` sin necesidad de activarlo. Si prefieres
-> activarlo: `source .venv/bin/activate` (Windows: `.venv\Scripts\activate`).
-
-## Puesta en marcha (Docker)
-
-No requiere Python ni dependencias locales — solo Docker. Flujo completo
-(el mismo de la demo):
-
-```bash
-cp .env.example .env                     # 1. configuración (los defaults sirven)
-docker compose build                     # 2. imagen
-docker compose run --rm simulador \
-  python -m db.sembrar_historico --limpiar   # 3. (opcional) sembrar 24 h de historial
-docker compose up                        # 4. simulador + dashboard
-```
-
-Levanta dos servicios que comparten el archivo SQLite vía volumen del repo:
-
-- **simulador** — ingesta continua (`ingesta.scheduler`).
-- **dashboard** — app Dash en http://localhost:8050 (`dashboard.app`).
-
-En local, el dashboard también puede arrancarse directo con
-`uv run python -m dashboard.app`.
-
-Ambos contenedores fijan `TZ=America/Santiago` (en `docker-compose.yml`), de modo
-que los timestamps generados dentro de Docker quedan en hora de Chile, alineados
-con las corridas locales. La imagen base `python:3.12-slim` ya incluye `tzdata`,
-así que basta con la variable de entorno.
 
 ## Modelo de datos
 
-Tres tablas relacionadas por `timestamp` (y `zona` cuando aplica). El clima es global
-(sin `zona`). Ver `db/schema.sql`.
+Tres tablas relacionadas por `timestamp` (y `zona` cuando aplica). El clima es global.
 
-| Tabla                | Columnas                                                        |
-|----------------------|-----------------------------------------------------------------|
-| `Trafico`            | id, timestamp, zona, vehiculos, velocidad_promedio              |
-| `Calidad_Aire_Hist`  | id, timestamp, zona, pm25, no2, o3                              |
-| `Condiciones_Clima`  | id, timestamp, temperatura, humedad, viento                    |
+| Tabla               | Columnas                                           |
+| ------------------- | -------------------------------------------------- |
+| `Trafico`           | id, timestamp, zona, vehiculos, velocidad_promedio |
+| `Calidad_Aire_Hist` | id, timestamp, zona, pm25, no2, o3                 |
+| `Condiciones_Clima` | id, timestamp, temperatura, humedad, viento        |
+
+## Qué aprendí
+
+- Diseñar un pipeline de ingesta continua y separar responsabilidades por capas.
+- Limpiar y normalizar datos antes de visualizarlos.
+- Orquestar servicios con Docker Compose y probar con pytest.
